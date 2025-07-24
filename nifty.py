@@ -193,9 +193,6 @@ def analyze():
     else:
         continue
 
-            else:
-                continue
-
             ltp = df.loc[df['strikePrice'] == row['Strike'], f'lastPrice_{option_type}'].values[0]
             iv = df.loc[df['strikePrice'] == row['Strike'], f'impliedVolatility_{option_type}'].values[0]
             target = round(ltp * (1 + iv / 100), 2)
