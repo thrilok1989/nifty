@@ -184,14 +184,19 @@ def analyze():
         signal_sent = False
 
         for row in bias_results:
-            if is_in_zone(underlying, row['Strike'], row['Level']):
-                option_type = 'CE' if row['Level'] == "Support" else 'PE'
-            elif row['Level'] == "Neutral" and total_score <= -4 and "Bearish" in market_view:
-                option_type = 'PE'
-            elif row['Level'] == "Neutral" and total_score >= 4 and "Bullish" in market_view:
-                option_type = 'CE'
-            else:
-                continue
+    # 1. Entry near SUPPORT if Bullish view and score positive
+    if is_in_zone(underlying, row['Strike'], row['Level']) and row['Level'] == "Support" and total_score >= 4 and "Bullish" in market_view:
+        option_type = 'CE'
+    # 2. Entry near RESISTANCE if Bearish view and score negative
+    elif is_in_zone(underlying, row['Strike'], row['Level']) and row['Level'] == "Resistance" and total_score <= -4 and "Bearish" in market_view:
+        option_type = 'PE'
+    # 3. Neutral level but strong directional score
+    elif row['Level'] == "Neutral" and total_score <= -4 and "Bearish" in market_view:
+        option_type = 'PE'
+    elif row['Level'] == "Neutral" and total_score >= 4 and "Bullish" in market_view:
+        option_type = 'CE'
+    else:
+        continue
 
             ltp = df.loc[df['strikePrice'] == row['Strike'], f'lastPrice_{option_type}'].values[0]
             iv = df.loc[df['strikePrice'] == row['Strike'], f'impliedVolatility_{option_type}'].values[0]
