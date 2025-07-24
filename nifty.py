@@ -92,10 +92,12 @@ def is_in_zone(spot, strike, level):
         return strike - 10 <= spot <= strike + 20
     return False
 
+from pytz import timezone
+
 def analyze():
     try:
         # === Market Timing Guard ===
-        now = datetime.now()
+        now = datetime.now(timezone("Asia/Kolkata"))
         current_day = now.weekday()  # 0 = Monday, 6 = Sunday
         current_time = now.time()
 
@@ -106,6 +108,7 @@ def analyze():
             st.warning("⏳ Market is closed. Script will resume during trading hours.")
             send_telegram_message("⏳ Market is closed. Script will resume during trading hours (Mon–Fri 9:00–15:40).")
             return
+
             
         headers = {"User-Agent": "Mozilla/5.0"}
         session = requests.Session()
