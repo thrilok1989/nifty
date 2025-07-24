@@ -183,15 +183,15 @@ def analyze():
         atm_signal, suggested_trade = "No Signal", ""
         signal_sent = False
 
-       for row in bias_results:
-    if is_in_zone(underlying, row['Strike'], row['Level']):
-        option_type = 'CE' if row['Level'] == "Support" else 'PE'
-    elif row['Level'] == "Neutral" and total_score <= -4 and "Bearish" in market_view:
-        option_type = 'PE'
-    elif row['Level'] == "Neutral" and total_score >= 4 and "Bullish" in market_view:
-        option_type = 'CE'
-    else:
-        continue
+        for row in bias_results:
+            if is_in_zone(underlying, row['Strike'], row['Level']):
+                option_type = 'CE' if row['Level'] == "Support" else 'PE'
+            elif row['Level'] == "Neutral" and total_score <= -4 and "Bearish" in market_view:
+                option_type = 'PE'
+            elif row['Level'] == "Neutral" and total_score >= 4 and "Bullish" in market_view:
+                option_type = 'CE'
+            else:
+                continue
 
             ltp = df.loc[df['strikePrice'] == row['Strike'], f'lastPrice_{option_type}'].values[0]
             iv = df.loc[df['strikePrice'] == row['Strike'], f'impliedVolatility_{option_type}'].values[0]
