@@ -94,6 +94,19 @@ def is_in_zone(spot, strike, level):
 
 def analyze():
     try:
+        # === Market Timing Guard ===
+        now = datetime.now()
+        current_day = now.weekday()  # 0 = Monday, 6 = Sunday
+        current_time = now.time()
+
+        market_start = datetime.strptime("09:00", "%H:%M").time()
+        market_end = datetime.strptime("15:40", "%H:%M").time()
+
+        if current_day >= 5 or not (market_start <= current_time <= market_end):
+            st.warning("⏳ Market is closed. Script will resume during trading hours.")
+            send_telegram_message("⏳ Market is closed. Script will resume during trading hours (Mon–Fri 9:00–15:40).")
+            return
+            
         headers = {"User-Agent": "Mozilla/5.0"}
         session = requests.Session()
         session.headers.update(headers)
