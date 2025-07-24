@@ -104,10 +104,21 @@ def analyze():
         market_start = datetime.strptime("09:00", "%H:%M").time()
         market_end = datetime.strptime("15:40", "%H:%M").time()
 
-        if current_day >= 5 or not (market_start <= current_time <= market_end):
-            st.warning("⏳ Market is closed. Script will resume during trading hours.")
-            send_telegram_message("⏳ Market is closed. Script will resume during trading hours (Mon–Fri 9:00–15:40).")
-            return
+        # Limit to once per hour
+if 'last_closed_alert' not in st.session_state:
+    st.session_state.last_closed_alert = None
+
+if current_day >= 5 or not (market_start <= current_time <= market_end):
+    st.warning("⏳ Market is closed. Script will resume during trading hours.")
+    
+    if (
+        st.session_state.last_closed_alert is None or
+        (now - st.session_state.last_closed_alert).seconds > 3600
+    ):
+        send_telegram_message("⏳ Market is closed. Script will resume during trading hours (Mon–Fri 9:00–15:40).")
+        st.session_state.last_closed_alert = now
+
+    return
 
             
         headers = {"User-Agent": "Mozilla/5.0"}
