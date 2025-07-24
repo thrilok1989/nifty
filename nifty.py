@@ -186,9 +186,9 @@ def analyze():
         for row in bias_results:
             if is_in_zone(underlying, row['Strike'], row['Level']):
                 option_type = 'CE' if row['Level'] == "Support" else 'PE'
-            elif row['Level'] == "Neutral" and abs(total_score) >= 4 and "Bearish" in market_view:
+            elif row['Level'] == "Neutral" and total_score <= -4 and "Bearish" in market_view:
     option_type = 'PE'
-elif row['Level'] == "Neutral" and abs(total_score) >= 4 and "Bullish" in market_view:
+elif row['Level'] == "Neutral" and total_score >= 4 and "Bullish" in market_view:
     option_type = 'CE'
 else:
     continue
