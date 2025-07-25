@@ -203,14 +203,13 @@ def analyze():
         signal_sent = False
 
         for row in bias_results:
-            if is_in_zone(underlying, row['Strike'], row['Level']) and row['Level'] == "Support" and total_score >= 4 and "Bullish" in market_view:
+            if not is_in_zone(underlying, row['Strike'], row['Level']):
+                continue
+
+            if row['Level'] == "Support" and total_score >= 4 and "Bullish" in market_view:
                 option_type = 'CE'
-            elif is_in_zone(underlying, row['Strike'], row['Level']) and row['Level'] == "Resistance" and total_score <= -4 and "Bearish" in market_view:
+            elif row['Level'] == "Resistance" and total_score <= -4 and "Bearish" in market_view:
                 option_type = 'PE'
-            elif row['Level'] == "Neutral" and total_score <= -4 and "Bearish" in market_view:
-                option_type = 'PE'
-            elif row['Level'] == "Neutral" and total_score >= 4 and "Bullish" in market_view:
-                option_type = 'CE'
             else:
                 continue
 
@@ -219,17 +218,18 @@ def analyze():
             target = round(ltp * (1 + iv / 100), 2)
             stop_loss = round(ltp * 0.8, 2)
 
-            atm_signal = f"{'CALL' if option_type == 'CE' else 'PUT'} Entry (Bias Based{' near S/R' if row['Level'] != 'Neutral' else ''})"
+            atm_signal = f"{'CALL' if option_type == 'CE' else 'PUT'} Entry (Bias Based at {row['Level']})"
             suggested_trade = f"Strike: {row['Strike']} {option_type} @ ₹{ltp} | 🎯 Target: ₹{target} | 🛑 SL: ₹{stop_loss}"
+
             send_telegram_message(
-                f"📍 Spot: {underlying}\n🔹 {atm_signal}\n{suggested_trade}\nBias Score (ATM ±2): {total_score} ({market_view})\nLevel: {atm_row['Level']}\nBiases: Strike: {atm_row['Strike']}, ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']}, AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
+                f"📍 Spot: {underlying}\n🔹 {atm_signal}\n{suggested_trade}\nBias Score (ATM ±2): {total_score} ({market_view})\nLevel: {row['Level']}\nBiases: Strike: {row['Strike']}, ChgOI: {row['ChgOI_Bias']}, Volume: {row['Volume_Bias']}, Gamma: {row['Gamma_Bias']}, AskQty: {row['AskQty_Bias']}, BidQty: {row['BidQty_Bias']}, IV: {row['IV_Bias']}, DVP: {row['DVP_Bias']}"
             )
             signal_sent = True
             break
 
         if not signal_sent:
             send_telegram_message(
-                f"📍 Spot: {underlying}\n{market_view}\nNo Signal — Market is {market_view}\nBias Score: {total_score} ({market_view})\nLevel: {atm_row['Level']}\nBiases: Strike: {atm_row['Strike']}, ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']}, AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
+                f"📍 Spot: {underlying}\n{market_view}\nNo Signal — Spot not in valid zone or direction mismatch.\nBias Score: {total_score} ({market_view})\nLevel: {atm_row['Level']}\nBiases: Strike: {atm_row['Strike']}, ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']}, AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
             )
 
         st.markdown(f"### 📍 Spot Price: {underlying}")
