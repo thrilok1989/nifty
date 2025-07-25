@@ -1,5 +1,3 @@
-Nifty Options Analyzer with Dynamic Support/Resistance Zones, Signals, and Telegram Alerts
-
 import streamlit as st from streamlit_autorefresh import st_autorefresh import requests import pandas as pd import numpy as np from datetime import datetime import math from scipy.stats import norm from pytz import timezone import plotly.graph_objects as go
 
 === Streamlit Config ===
