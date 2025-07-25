@@ -222,7 +222,7 @@ def analyze():
             atm_signal = f"{'CALL' if option_type == 'CE' else 'PUT'} Entry (Bias Based{' near S/R' if row['Level'] != 'Neutral' else ''})"
             suggested_trade = f"Strike: {row['Strike']} {option_type} @ ₹{ltp} | 🎯 Target: ₹{target} | 🛑 SL: ₹{stop_loss}"
             send_telegram_message(
-                f"📍 Spot: {underlying}\n🔹 {atm_signal}\n{suggested_trade}\nBias Score (ATM ±2): {total_score} ({market_view})\nLevel: {atm_row['Level']}\nBiases: ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']}, AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
+                f"📍 Spot: {underlying}\n🔹 {atm_signal}\n{suggested_trade}\nBias Score (ATM ±2): {total_score} ({market_view})\nLevel: {atm_row['Level']}\nBiases: Strike: {atm_row['Strike']}, ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']}, AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
             )
             signal_sent = True
             break
