@@ -88,9 +88,9 @@ def determine_level(row):
 
 def is_in_zone(spot, strike, level):
     if level == "Support":
-        return strike - 20 <= spot <= strike + 10
+        return strike - 10 <= spot <= strike + 5
     elif level == "Resistance":
-        return strike - 10 <= spot <= strike + 20
+        return strike - 5 <= spot <= strike + 10
     return False
 
 def analyze():
