@@ -71,7 +71,6 @@ def sudden_liquidity_spike(row):
 weights = {
     "ChgOI_Bias": 2,
     "Volume_Bias": 1,
-    "Delta_Bias": 2,
     "Gamma_Bias": 1,
     "AskQty_Bias": 1,
     "BidQty_Bias": 1,
@@ -107,7 +106,10 @@ def analyze():
 
         if current_day >= 5 or not (market_start <= current_time <= market_end):
             st.warning("⏳ Market is closed. Script will resume during trading hours.")
-            if (st.session_state.last_closed_alert is None or (now - st.session_state.last_closed_alert).seconds > 3600):
+            if (
+                st.session_state.last_closed_alert is None or
+                (now - st.session_state.last_closed_alert).seconds > 3600
+            ):
                 send_telegram_message("⏳ Market is closed. Script will resume during trading hours (Mon–Fri 9:00–15:40).")
                 st.session_state.last_closed_alert = now
             return
@@ -116,7 +118,6 @@ def analyze():
         session = requests.Session()
         session.headers.update(headers)
         session.get("https://www.nseindia.com", timeout=5)
-
         url = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
         response = session.get(url, timeout=10)
         data = response.json()
@@ -168,7 +169,6 @@ def analyze():
                 "Level": row['Level'],
                 "ChgOI_Bias": "Bullish" if row['changeinOpenInterest_CE'] < row['changeinOpenInterest_PE'] else "Bearish",
                 "Volume_Bias": "Bullish" if row['totalTradedVolume_CE'] < row['totalTradedVolume_PE'] else "Bearish",
-                "Delta_Bias": "Bullish" if row['Delta_CE'] < abs(row['Delta_PE']) else "Bearish",
                 "Gamma_Bias": "Bullish" if row['Gamma_CE'] < row['Gamma_PE'] else "Bearish",
                 "AskQty_Bias": "Bullish" if row['askQty_PE'] > row['askQty_CE'] else "Bearish",
                 "BidQty_Bias": "Bearish" if row['bidQty_PE'] < row['bidQty_CE'] else "Bullish",
@@ -183,10 +183,7 @@ def analyze():
             for k in row_data:
                 if "_Bias" in k:
                     bias = row_data[k]
-                    if bias == "Bullish":
-                        score += weights.get(k, 1)
-                    elif bias == "Bearish":
-                        score -= weights.get(k, 1)
+                    score += weights.get(k, 1) if bias == "Bullish" else -weights.get(k, 1)
 
             row_data["BiasScore"] = score
             row_data["Verdict"] = final_verdict(score)
@@ -223,7 +220,7 @@ def analyze():
             stop_loss = round(ltp * 0.8, 2)
 
             atm_signal = f"{'CALL' if option_type == 'CE' else 'PUT'} Entry (Bias Based{' near S/R' if row['Level'] != 'Neutral' else ''})"
-            suggested_trade = f"Strike: {row['Strike']} {option_type} @ ₹{ltp} | 🌟 Target: ₹{target} | 🚫 SL: ₹{stop_loss}"
+            suggested_trade = f"Strike: {row['Strike']} {option_type} @ ₹{ltp} | 🎯 Target: ₹{target} | 🛑 SL: ₹{stop_loss}"
             send_telegram_message(
                 f"📍 Spot: {underlying}\n🔹 {atm_signal}\n{suggested_trade}\nBias Score (ATM ±2): {total_score} ({market_view})"
             )
@@ -236,20 +233,13 @@ def analyze():
             )
 
         st.markdown(f"### 📍 Spot Price: {underlying}")
-        st.success(f"🧐 Market View: **{market_view}**")
+        st.success(f"🧠 Market View: **{market_view}**")
         if suggested_trade:
             st.info(f"🔹 {atm_signal}\n{suggested_trade}")
-
-        st.dataframe(df_summary[[
-            "Strike", "Zone", "Level", "BiasScore", "Verdict",
-            "ChgOI_Bias", "Volume_Bias", "Delta_Bias", "Gamma_Bias",
-            "AskQty_Bias", "BidQty_Bias", "IV_Bias", "DVP_Bias"
-        ]])
+        st.dataframe(df_summary)
 
     except Exception as e:
         st.error(f"❌ Error: {e}")
         send_telegram_message(f"❌ Error: {str(e)}")
 
-# === Run Analyzer ===
 analyze()
-
