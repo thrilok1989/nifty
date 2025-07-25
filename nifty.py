@@ -6,6 +6,7 @@ import numpy as np
 from datetime import datetime
 import math
 from scipy.stats import norm
+from pytz import timezone
 
 # === Streamlit Config ===
 st.set_page_config(page_title="Nifty Options Analyzer", layout="wide")
@@ -72,7 +73,8 @@ weights = {
     "Volume_Bias": 1,
     "Delta_Bias": 2,
     "Gamma_Bias": 1,
-    "AskBid_Bias": 1,
+    "AskQty_Bias": 1,
+    "BidQty_Bias": 1,
     "IV_Bias": 1,
     "DVP_Bias": 1,
 }
@@ -92,35 +94,24 @@ def is_in_zone(spot, strike, level):
         return strike - 10 <= spot <= strike + 20
     return False
 
-from pytz import timezone
-
 def analyze():
     try:
-        # === Market Timing Guard ===
         now = datetime.now(timezone("Asia/Kolkata"))
-        current_day = now.weekday()  # 0 = Monday, 6 = Sunday
+        current_day = now.weekday()
         current_time = now.time()
-
         market_start = datetime.strptime("09:00", "%H:%M").time()
         market_end = datetime.strptime("15:40", "%H:%M").time()
 
-        # Limit to once per hour
-if 'last_closed_alert' not in st.session_state:
-    st.session_state.last_closed_alert = None
+        if 'last_closed_alert' not in st.session_state:
+            st.session_state.last_closed_alert = None
 
-if current_day >= 5 or not (market_start <= current_time <= market_end):
-    st.warning("⏳ Market is closed. Script will resume during trading hours.")
-    
-    if (
-        st.session_state.last_closed_alert is None or
-        (now - st.session_state.last_closed_alert).seconds > 3600
-    ):
-        send_telegram_message("⏳ Market is closed. Script will resume during trading hours (Mon–Fri 9:00–15:40).")
-        st.session_state.last_closed_alert = now
+        if current_day >= 5 or not (market_start <= current_time <= market_end):
+            st.warning("⏳ Market is closed. Script will resume during trading hours.")
+            if (st.session_state.last_closed_alert is None or (now - st.session_state.last_closed_alert).seconds > 3600):
+                send_telegram_message("⏳ Market is closed. Script will resume during trading hours (Mon–Fri 9:00–15:40).")
+                st.session_state.last_closed_alert = now
+            return
 
-    return
-
-            
         headers = {"User-Agent": "Mozilla/5.0"}
         session = requests.Session()
         session.headers.update(headers)
@@ -179,7 +170,8 @@ if current_day >= 5 or not (market_start <= current_time <= market_end):
                 "Volume_Bias": "Bullish" if row['totalTradedVolume_CE'] < row['totalTradedVolume_PE'] else "Bearish",
                 "Delta_Bias": "Bullish" if row['Delta_CE'] < abs(row['Delta_PE']) else "Bearish",
                 "Gamma_Bias": "Bullish" if row['Gamma_CE'] < row['Gamma_PE'] else "Bearish",
-                "AskBid_Bias": "Bullish" if row['bidQty_CE'] < row['askQty_CE'] else "Bearish",
+                "AskQty_Bias": "Bullish" if row['askQty_PE'] > row['askQty_CE'] else "Bearish",
+                "BidQty_Bias": "Bearish" if row['bidQty_PE'] < row['bidQty_CE'] else "Bullish",
                 "IV_Bias": "Bullish" if row['impliedVolatility_CE'] > row['impliedVolatility_PE'] else "Bearish",
                 "DVP_Bias": delta_volume_bias(
                     row['lastPrice_CE'] - row['lastPrice_PE'],
@@ -191,7 +183,10 @@ if current_day >= 5 or not (market_start <= current_time <= market_end):
             for k in row_data:
                 if "_Bias" in k:
                     bias = row_data[k]
-                    score += weights.get(k, 1) if bias == "Bullish" else -weights.get(k, 1)
+                    if bias == "Bullish":
+                        score += weights.get(k, 1)
+                    elif bias == "Bearish":
+                        score -= weights.get(k, 1)
 
             row_data["BiasScore"] = score
             row_data["Verdict"] = final_verdict(score)
@@ -211,21 +206,14 @@ if current_day >= 5 or not (market_start <= current_time <= market_end):
         signal_sent = False
 
         for row in bias_results:
-            # 1. Entry near SUPPORT if Bullish view and score positive
             if is_in_zone(underlying, row['Strike'], row['Level']) and row['Level'] == "Support" and total_score >= 4 and "Bullish" in market_view:
                 option_type = 'CE'
-
-            # 2. Entry near RESISTANCE if Bearish view and score negative
             elif is_in_zone(underlying, row['Strike'], row['Level']) and row['Level'] == "Resistance" and total_score <= -4 and "Bearish" in market_view:
                 option_type = 'PE'
-
-            # 3. Neutral level but strong directional score
             elif row['Level'] == "Neutral" and total_score <= -4 and "Bearish" in market_view:
                 option_type = 'PE'
-
             elif row['Level'] == "Neutral" and total_score >= 4 and "Bullish" in market_view:
                 option_type = 'CE'
-
             else:
                 continue
 
@@ -235,7 +223,7 @@ if current_day >= 5 or not (market_start <= current_time <= market_end):
             stop_loss = round(ltp * 0.8, 2)
 
             atm_signal = f"{'CALL' if option_type == 'CE' else 'PUT'} Entry (Bias Based{' near S/R' if row['Level'] != 'Neutral' else ''})"
-            suggested_trade = f"Strike: {row['Strike']} {option_type} @ ₹{ltp} | 🎯 Target: ₹{target} | 🛑 SL: ₹{stop_loss}"
+            suggested_trade = f"Strike: {row['Strike']} {option_type} @ ₹{ltp} | 🌟 Target: ₹{target} | 🚫 SL: ₹{stop_loss}"
             send_telegram_message(
                 f"📍 Spot: {underlying}\n🔹 {atm_signal}\n{suggested_trade}\nBias Score (ATM ±2): {total_score} ({market_view})"
             )
@@ -247,13 +235,16 @@ if current_day >= 5 or not (market_start <= current_time <= market_end):
                 f"📍 Spot: {underlying}\n{market_view}\nNo Signal — Market is {market_view}\nBias Score: {total_score} ({market_view})"
             )
 
-        # === Streamlit Display ===
         st.markdown(f"### 📍 Spot Price: {underlying}")
-        st.success(f"🧠 Market View: **{market_view}**")
+        st.success(f"🧐 Market View: **{market_view}**")
         if suggested_trade:
             st.info(f"🔹 {atm_signal}\n{suggested_trade}")
-        st.dataframe(df_summary)
 
+        st.dataframe(df_summary[[
+            "Strike", "Zone", "Level", "BiasScore", "Verdict",
+            "ChgOI_Bias", "Volume_Bias", "Delta_Bias", "Gamma_Bias",
+            "AskQty_Bias", "BidQty_Bias", "IV_Bias", "DVP_Bias"
+        ]])
 
     except Exception as e:
         st.error(f"❌ Error: {e}")
