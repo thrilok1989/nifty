@@ -79,9 +79,9 @@ weights = {
 }
 
 def determine_level(row):
-    if row['openInterest_PE'] > 1.2 * row['openInterest_CE']:
+    if row['openInterest_PE'] > 1.12 * row['openInterest_CE']:
         return "Support"
-    elif row['openInterest_CE'] > 1.2 * row['openInterest_PE']:
+    elif row['openInterest_CE'] > 1.12 * row['openInterest_PE']:
         return "Resistance"
     else:
         return "Neutral"
