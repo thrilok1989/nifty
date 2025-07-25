@@ -171,7 +171,7 @@ def analyze():
                 "Volume_Bias": "Bullish" if row['totalTradedVolume_CE'] < row['totalTradedVolume_PE'] else "Bearish",
                 "Gamma_Bias": "Bullish" if row['Gamma_CE'] < row['Gamma_PE'] else "Bearish",
                 "AskQty_Bias": "Bullish" if row['askQty_PE'] > row['askQty_CE'] else "Bearish",
-                "BidQty_Bias": "Bearish" if row['bidQty_PE'] > row['bidQty_CE'] else "Bullish",
+                "BidQty_Bias": "Bearish" if row['bidQty_PE'] < row['bidQty_CE'] else "Bullish",
                 "IV_Bias": "Bullish" if row['impliedVolatility_CE'] > row['impliedVolatility_PE'] else "Bearish",
                 "DVP_Bias": delta_volume_bias(
                     row['lastPrice_CE'] - row['lastPrice_PE'],
@@ -222,14 +222,14 @@ def analyze():
             atm_signal = f"{'CALL' if option_type == 'CE' else 'PUT'} Entry (Bias Based{' near S/R' if row['Level'] != 'Neutral' else ''})"
             suggested_trade = f"Strike: {row['Strike']} {option_type} @ ₹{ltp} | 🎯 Target: ₹{target} | 🛑 SL: ₹{stop_loss}"
             send_telegram_message(
-                f"📍 Spot: {underlying}\n🔹 {atm_signal}\n{suggested_trade}\nBias Score (ATM ±2): {total_score} ({market_view})"
+                f"📍 Spot: {underlying}\n🔹 {atm_signal}\n{suggested_trade}\nBias Score (ATM ±2): {total_score} ({market_view})\nLevel: {atm_row['Level']}\nBiases: ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']}, AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
             )
             signal_sent = True
             break
 
         if not signal_sent:
             send_telegram_message(
-                f"📍 Spot: {underlying}\n{market_view}\nNo Signal — Market is {market_view}\nBias Score: {total_score} ({market_view})"
+                f"📍 Spot: {underlying}\n{market_view}\nNo Signal — Market is {market_view}\nBias Score: {total_score} ({market_view})\nLevel: {atm_row['Level']}\nBiases: ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']}, AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
             )
 
         st.markdown(f"### 📍 Spot Price: {underlying}")
