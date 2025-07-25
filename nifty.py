@@ -229,7 +229,7 @@ def analyze():
 
         if not signal_sent:
             send_telegram_message(
-                f"📍 Spot: {underlying}\n{market_view}\nNo Signal — Market is {market_view}\nBias Score: {total_score} ({market_view})\nLevel: {atm_row['Level']}\nBiases: Strike: {atm_row['Strike']}, ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']}, AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}, Strike: {atm_row['Strike']}"
+                f"📍 Spot: {underlying}\n{market_view}\nNo Signal — Market is {market_view}\nBias Score: {total_score} ({market_view})\nLevel: {atm_row['Level']}\nBiases: Strike: {atm_row['Strike']}, ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']}, AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
             )
 
         st.markdown(f"### 📍 Spot Price: {underlying}")
