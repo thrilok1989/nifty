@@ -115,12 +115,38 @@ def analyze():
             return
 
         headers = {"User-Agent": "Mozilla/5.0"}
-        session = requests.Session()
-        session.headers.update(headers)
-        session.get("https://www.nseindia.com", timeout=5)
-        url = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
-        response = session.get(url, timeout=10)
-        data = response.json()
+import time
+
+def fetch_nse_data_with_retries(url, retries=5, delay=2):
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept": "application/json",
+        "Referer": "https://www.nseindia.com/",
+        "Connection": "keep-alive"
+    })
+
+    for attempt in range(retries):
+        try:
+            # Initial visit to set cookies
+            session.get("https://www.nseindia.com", timeout=5)
+            response = session.get(url, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                st.warning(f"⚠️ Attempt {attempt+1}: NSE returned status {response.status_code}")
+        except Exception as e:
+            st.warning(f"⚠️ Attempt {attempt+1}: NSE fetch failed - {e}")
+        time.sleep(delay)
+    
+    raise Exception("Failed to fetch NSE data after multiple retries.")
+
+# Usage
+url = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
+data = fetch_nse_data_with_retries(url)
+
 
         records = data['records']['data']
         expiry = data['records']['expiryDates'][0]
