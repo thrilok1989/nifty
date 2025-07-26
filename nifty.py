@@ -217,7 +217,7 @@ def analyze():
         atm_signal, suggested_trade = "No Signal", ""
         signal_sent = False
 
-        for row in bias_results:
+                for row in bias_results:
             if not is_in_zone(underlying, row['Strike'], row['Level']):
                 continue
 
@@ -236,7 +236,7 @@ def analyze():
             atm_signal = f"{'CALL' if option_type == 'CE' else 'PUT'} Entry (Bias Based at {row['Level']})"
             suggested_trade = f"Strike: {row['Strike']} {option_type} @ ₹{ltp} | 🎯 Target: ₹{target} | 🛑 SL: ₹{stop_loss}"
 
-                       send_telegram_message(
+            send_telegram_message(
                 f"📍 Spot: {underlying}\n"
                 f"🔹 {atm_signal}\n"
                 f"{suggested_trade}\n"
@@ -250,11 +250,10 @@ def analyze():
                 f"AskQty: {row['AskQty_Bias']}, BidQty: {row['BidQty_Bias']}, IV: {row['IV_Bias']}, DVP: {row['DVP_Bias']}"
             )
 
-    signal_sent = True
-    break
+            signal_sent = True
+            break
 
-
-                if not signal_sent:
+        if not signal_sent and atm_row is not None:
             send_telegram_message(
                 f"📍 Spot: {underlying}\n"
                 f"{market_view} — No Signal 🚫 (Spot not in valid zone or direction mismatch)\n"
@@ -267,6 +266,7 @@ def analyze():
                 f"ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']},\n"
                 f"AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
             )
+
 
 
         st.markdown(f"### 📍 Spot Price: {underlying}")
