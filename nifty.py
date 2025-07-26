@@ -218,8 +218,8 @@ def analyze():
 if 'price_data' not in st.session_state:
     st.session_state['price_data'] = pd.DataFrame(columns=["Time", "Spot"])
 
-current_time_str = now.strftime("%H:%M:%S")
-new_row = pd.DataFrame([[current_time_str, underlying]], columns=["Time", "Spot"])
+current_time_str = datetime.now(timezone("Asia/Kolkata")).strftime("%H:%M:%S")
+new_row = pd.DataFrame([[current_time_str, st.session_state.get('underlying', 0)]], columns=["Time", "Spot"])
 st.session_state['price_data'] = pd.concat([st.session_state['price_data'], new_row], ignore_index=True)
 
 import altair as alt
