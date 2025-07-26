@@ -213,6 +213,75 @@ def analyze():
         atm_row = df_summary[df_summary["Zone"] == "ATM"].iloc[0] if not df_summary[df_summary["Zone"] == "ATM"].empty else None
         market_view = atm_row['Verdict'] if atm_row is not None else "Neutral"
         support_zone, resistance_zone = get_support_resistance_zones(df, underlying)
+
+# === Live Spot Price Chart with Zones ===
+if 'price_data' not in st.session_state:
+    st.session_state['price_data'] = pd.DataFrame(columns=["Time", "Spot"])
+
+current_time_str = now.strftime("%H:%M:%S")
+new_row = pd.DataFrame([[current_time_str, underlying]], columns=["Time", "Spot"])
+st.session_state['price_data'] = pd.concat([st.session_state['price_data'], new_row], ignore_index=True)
+
+import altair as alt
+
+# Main spot line chart
+spot_chart = alt.Chart(st.session_state['price_data']).mark_line(color="blue").encode(
+    x=alt.X('Time:T', axis=alt.Axis(title='Time')),
+    y=alt.Y('Spot:Q', axis=alt.Axis(title='Spot Price')),
+).properties(
+    title="📈 Spot Price Action",
+    width=900,
+    height=400
+)
+
+# Create zone bands: Support, Resistance, and Neutral
+zone_bands = []
+
+# Support
+if support_zone != (None, None) and all(support_zone):
+    zone_bands.append(
+        alt.Chart(pd.DataFrame({
+            'Zone': ['Support'],
+            'y': [support_zone[0]],
+            'y2': [support_zone[1]]
+        })).mark_rect(opacity=0.2, color='green').encode(
+            y='y:Q', y2='y2:Q'
+        )
+    )
+
+# Resistance
+if resistance_zone != (None, None) and all(resistance_zone):
+    zone_bands.append(
+        alt.Chart(pd.DataFrame({
+            'Zone': ['Resistance'],
+            'y': [resistance_zone[0]],
+            'y2': [resistance_zone[1]]
+        })).mark_rect(opacity=0.2, color='red').encode(
+            y='y:Q', y2='y2:Q'
+        )
+    )
+
+# Neutral Zone (between top of support and bottom of resistance)
+if (
+    support_zone != (None, None) and resistance_zone != (None, None) and
+    support_zone[1] < resistance_zone[0]
+):
+    zone_bands.append(
+        alt.Chart(pd.DataFrame({
+            'Zone': ['Neutral'],
+            'y': [support_zone[1]],
+            'y2': [resistance_zone[0]]
+        })).mark_rect(opacity=0.15, color='gray').encode(
+            y='y:Q', y2='y2:Q'
+        )
+    )
+
+# Combine all into the final chart
+for band in zone_bands:
+    spot_chart += band
+
+st.altair_chart(spot_chart, use_container_width=True)
+
         support_str = f"{support_zone[1]} to {support_zone[0]}" if all(support_zone) else "N/A"
         resistance_str = f"{resistance_zone[0]} to {resistance_zone[1]}" if all(resistance_zone) else "N/A"
 
