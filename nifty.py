@@ -267,8 +267,7 @@ def analyze():
                 f"AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
             )
 
-
-
+        # === Display on Streamlit ===
         st.markdown(f"### 📍 Spot Price: {underlying}")
         st.success(f"🧠 Market View: **{market_view}**")
         st.markdown(f"### 🛡️ Support Zone: `{support_str}`")
