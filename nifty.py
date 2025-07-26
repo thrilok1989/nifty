@@ -141,7 +141,7 @@ def analyze():
         underlying = data['records']['underlyingValue']
 
         today = datetime.now(timezone("Asia/Kolkata"))
-        expiry_date = datetime.strptime(expiry, "%d-%b-%Y")
+        expiry_date = timezone("Asia/Kolkata").localize(datetime.strptime(expiry, "%d-%b-%Y"))
         T = max((expiry_date - today).days, 1) / 365
         r = 0.06
 
