@@ -93,6 +93,18 @@ def is_in_zone(spot, strike, level):
         return strike - 20 <= spot <= strike + 10
     return False
 
+def get_support_resistance_zones(df, spot):
+    support_strikes = df[df['Level'] == "Support"]['strikePrice'].tolist()
+    resistance_strikes = df[df['Level'] == "Resistance"]['strikePrice'].tolist()
+
+    nearest_supports = sorted([s for s in support_strikes if s <= spot], reverse=True)[:2]
+    nearest_resistances = sorted([r for r in resistance_strikes if r >= spot])[:2]
+
+    support_zone = (min(nearest_supports), max(nearest_supports)) if len(nearest_supports) >= 2 else (nearest_supports[0], nearest_supports[0]) if nearest_supports else (None, None)
+    resistance_zone = (min(nearest_resistances), max(nearest_resistances)) if len(nearest_resistances) >= 2 else (nearest_resistances[0], nearest_resistances[0]) if nearest_resistances else (None, None)
+
+    return support_zone, resistance_zone
+
 def analyze():
     try:
         now = datetime.now(timezone("Asia/Kolkata"))
@@ -198,6 +210,12 @@ def analyze():
         df_summary = pd.DataFrame(bias_results)
         atm_row = df_summary[df_summary["Zone"] == "ATM"].iloc[0] if not df_summary[df_summary["Zone"] == "ATM"].empty else None
         market_view = atm_row['Verdict'] if atm_row is not None else "Neutral"
+        support_zone, resistance_zone = get_support_resistance_zones(df, underlying)
+        support_str = f"{support_zone[1]} to {support_zone[0]}" if all(support_zone) else "N/A"
+        resistance_str = f"{resistance_zone[0]} to {resistance_zone[1]}" if all(resistance_zone) else "N/A"
+        support_zone, resistance_zone = get_support_resistance_zones(df, underlying)
+        support_str = f"{support_zone[1]} to {support_zone[0]}" if all(support_zone) else "N/A"
+        resistance_str = f"{resistance_zone[0]} to {resistance_zone[1]}" if all(resistance_zone) else "N/A"
 
         atm_signal, suggested_trade = "No Signal", ""
         signal_sent = False
@@ -221,19 +239,41 @@ def analyze():
             atm_signal = f"{'CALL' if option_type == 'CE' else 'PUT'} Entry (Bias Based at {row['Level']})"
             suggested_trade = f"Strike: {row['Strike']} {option_type} @ ₹{ltp} | 🎯 Target: ₹{target} | 🛑 SL: ₹{stop_loss}"
 
-            send_telegram_message(
-                f"📍 Spot: {underlying}\n🔹 {atm_signal}\n{suggested_trade}\nBias Score (ATM ±2): {total_score} ({market_view})\nLevel: {row['Level']}\nBiases: Strike: {row['Strike']}, ChgOI: {row['ChgOI_Bias']}, Volume: {row['Volume_Bias']}, Gamma: {row['Gamma_Bias']}, AskQty: {row['AskQty_Bias']}, BidQty: {row['BidQty_Bias']}, IV: {row['IV_Bias']}, DVP: {row['DVP_Bias']}"
-            )
-            signal_sent = True
-            break
+           send_telegram_message(
+    f"📍 Spot: {underlying}\n"
+    f"🔹 {atm_signal}\n"
+    f"{suggested_trade}\n"
+    f"Bias Score (ATM ±2): {total_score} ({market_view})\n"
+    f"Level: {row['Level']}\n"
+    f"📉 Support Zone: {support_str}\n"
+    f"📈 Resistance Zone: {resistance_str}\n"
+    f"Biases:\n"
+    f"Strike: {row['Strike']}\n"
+    f"ChgOI: {row['ChgOI_Bias']}, Volume: {row['Volume_Bias']}, Gamma: {row['Gamma_Bias']},\n"
+    f"AskQty: {row['AskQty_Bias']}, BidQty: {row['BidQty_Bias']}, IV: {row['IV_Bias']}, DVP: {row['DVP_Bias']}"
+    )
+    signal_sent = True
+    break
+
 
         if not signal_sent:
-            send_telegram_message(
-                f"📍 Spot: {underlying}\n{market_view}\nNo Signal — Spot not in valid zone or direction mismatch.\nBias Score: {total_score} ({market_view})\nLevel: {atm_row['Level']}\nBiases: Strike: {atm_row['Strike']}, ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']}, AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
-            )
+    send_telegram_message(
+    f"📍 Spot: {underlying}\n"
+    f"{market_view} — No Signal 🚫 (Spot not in valid zone or direction mismatch)\n"
+    f"Bias Score: {total_score} ({market_view})\n"
+    f"Level: {atm_row['Level']}\n"
+    f"📉 Support Zone: {support_str}\n"
+    f"📈 Resistance Zone: {resistance_str}\n"
+    f"Biases:\n"
+    f"Strike: {atm_row['Strike']}\n"
+    f"ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']},\n"
+    f"AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
+    )
 
         st.markdown(f"### 📍 Spot Price: {underlying}")
         st.success(f"🧠 Market View: **{market_view}**")
+        st.markdown(f"### 🛡️ Support Zone: `{support_str}`")
+        st.markdown(f"### 🚧 Resistance Zone: `{resistance_str}`")
         if suggested_trade:
             st.info(f"🔹 {atm_signal}\n{suggested_trade}")
         st.dataframe(df_summary)
