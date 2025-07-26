@@ -359,8 +359,8 @@ break
             st.info(f"🔹 {atm_signal}\n{suggested_trade}")
         st.dataframe(df_summary)
         if st.session_state.trade_log:
-    st.markdown("### 📜 Trade Log")
-    st.dataframe(pd.DataFrame(st.session_state.trade_log))
+            st.markdown("### 📜 Trade Log")
+            st.dataframe(pd.DataFrame(st.session_state.trade_log))
 
 
 
