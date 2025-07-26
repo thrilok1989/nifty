@@ -140,7 +140,7 @@ def analyze():
         expiry = data['records']['expiryDates'][0]
         underlying = data['records']['underlyingValue']
 
-        today = datetime.today()
+        today = datetime.now(timezone("Asia/Kolkata"))
         expiry_date = datetime.strptime(expiry, "%d-%b-%Y")
         T = max((expiry_date - today).days, 1) / 365
         r = 0.06
@@ -290,8 +290,9 @@ break
             st.info(f"🔹 {atm_signal}\n{suggested_trade}")
         st.dataframe(df_summary)
         if st.session_state.trade_log:
-        st.markdown("### 📜 Trade Log")
-        st.dataframe(pd.DataFrame(st.session_state.trade_log))
+    st.markdown("### 📜 Trade Log")
+    st.dataframe(pd.DataFrame(st.session_state.trade_log))
+
 
     except Exception as e:
         st.error(f"❌ Error: {e}")
