@@ -106,6 +106,8 @@ def get_support_resistance_zones(df, spot):
     return support_zone, resistance_zone
 
 def analyze():
+    if 'trade_log' not in st.session_state:
+        st.session_state.trade_log = []
     try:
         now = datetime.now(timezone("Asia/Kolkata"))
         current_day = now.weekday()
@@ -238,21 +240,32 @@ def analyze():
             suggested_trade = f"Strike: {row['Strike']} {option_type} @ ₹{ltp} | 🎯 Target: ₹{target} | 🛑 SL: ₹{stop_loss}"
 
             send_telegram_message(
-                f"📍 Spot: {underlying}\n"
-                f"🔹 {atm_signal}\n"
-                f"{suggested_trade}\n"
-                f"Bias Score (ATM ±2): {total_score} ({market_view})\n"
-                f"Level: {row['Level']}\n"
-                f"📉 Support Zone: {support_str}\n"
-                f"📈 Resistance Zone: {resistance_str}\n"
-                f"Biases:\n"
-                f"Strike: {row['Strike']}\n"
-                f"ChgOI: {row['ChgOI_Bias']}, Volume: {row['Volume_Bias']}, Gamma: {row['Gamma_Bias']},\n"
-                f"AskQty: {row['AskQty_Bias']}, BidQty: {row['BidQty_Bias']}, IV: {row['IV_Bias']}, DVP: {row['DVP_Bias']}"
-            )
+    f"📍 Spot: {underlying}\n"
+    f"🔹 {atm_signal}\n"
+    f"{suggested_trade}\n"
+    f"Bias Score (ATM ±2): {total_score} ({market_view})\n"
+    f"Level: {row['Level']}\n"
+    f"📉 Support Zone: {support_str}\n"
+    f"📈 Resistance Zone: {resistance_str}\n"
+    f"Biases:\n"
+    f"Strike: {row['Strike']}\n"
+    f"ChgOI: {row['ChgOI_Bias']}, Volume: {row['Volume_Bias']}, Gamma: {row['Gamma_Bias']},\n"
+    f"AskQty: {row['AskQty_Bias']}, BidQty: {row['BidQty_Bias']}, IV: {row['IV_Bias']}, DVP: {row['DVP_Bias']}"
+)
 
-            signal_sent = True
-            break
+st.session_state.trade_log.append({
+    "Time": now.strftime("%H:%M:%S"),
+    "Strike": row['Strike'],
+    "Type": option_type,
+    "LTP": ltp,
+    "Target": target,
+    "SL": stop_loss
+})
+
+signal_sent = True
+break
+
+
 
         if not signal_sent and atm_row is not None:
             send_telegram_message(
@@ -276,6 +289,9 @@ def analyze():
         if suggested_trade:
             st.info(f"🔹 {atm_signal}\n{suggested_trade}")
         st.dataframe(df_summary)
+        if st.session_state.trade_log:
+        st.markdown("### 📜 Trade Log")
+        st.dataframe(pd.DataFrame(st.session_state.trade_log))
 
     except Exception as e:
         st.error(f"❌ Error: {e}")
