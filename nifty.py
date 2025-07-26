@@ -213,9 +213,6 @@ def analyze():
         support_zone, resistance_zone = get_support_resistance_zones(df, underlying)
         support_str = f"{support_zone[1]} to {support_zone[0]}" if all(support_zone) else "N/A"
         resistance_str = f"{resistance_zone[0]} to {resistance_zone[1]}" if all(resistance_zone) else "N/A"
-        support_zone, resistance_zone = get_support_resistance_zones(df, underlying)
-        support_str = f"{support_zone[1]} to {support_zone[0]}" if all(support_zone) else "N/A"
-        resistance_str = f"{resistance_zone[0]} to {resistance_zone[1]}" if all(resistance_zone) else "N/A"
 
         atm_signal, suggested_trade = "No Signal", ""
         signal_sent = False
@@ -239,36 +236,38 @@ def analyze():
             atm_signal = f"{'CALL' if option_type == 'CE' else 'PUT'} Entry (Bias Based at {row['Level']})"
             suggested_trade = f"Strike: {row['Strike']} {option_type} @ ₹{ltp} | 🎯 Target: ₹{target} | 🛑 SL: ₹{stop_loss}"
 
-           send_telegram_message(
-    f"📍 Spot: {underlying}\n"
-    f"🔹 {atm_signal}\n"
-    f"{suggested_trade}\n"
-    f"Bias Score (ATM ±2): {total_score} ({market_view})\n"
-    f"Level: {row['Level']}\n"
-    f"📉 Support Zone: {support_str}\n"
-    f"📈 Resistance Zone: {resistance_str}\n"
-    f"Biases:\n"
-    f"Strike: {row['Strike']}\n"
-    f"ChgOI: {row['ChgOI_Bias']}, Volume: {row['Volume_Bias']}, Gamma: {row['Gamma_Bias']},\n"
-    f"AskQty: {row['AskQty_Bias']}, BidQty: {row['BidQty_Bias']}, IV: {row['IV_Bias']}, DVP: {row['DVP_Bias']}"
-    )
+                       send_telegram_message(
+                f"📍 Spot: {underlying}\n"
+                f"🔹 {atm_signal}\n"
+                f"{suggested_trade}\n"
+                f"Bias Score (ATM ±2): {total_score} ({market_view})\n"
+                f"Level: {row['Level']}\n"
+                f"📉 Support Zone: {support_str}\n"
+                f"📈 Resistance Zone: {resistance_str}\n"
+                f"Biases:\n"
+                f"Strike: {row['Strike']}\n"
+                f"ChgOI: {row['ChgOI_Bias']}, Volume: {row['Volume_Bias']}, Gamma: {row['Gamma_Bias']},\n"
+                f"AskQty: {row['AskQty_Bias']}, BidQty: {row['BidQty_Bias']}, IV: {row['IV_Bias']}, DVP: {row['DVP_Bias']}"
+            )
+
     signal_sent = True
     break
 
 
-        if not signal_sent:
-    send_telegram_message(
-    f"📍 Spot: {underlying}\n"
-    f"{market_view} — No Signal 🚫 (Spot not in valid zone or direction mismatch)\n"
-    f"Bias Score: {total_score} ({market_view})\n"
-    f"Level: {atm_row['Level']}\n"
-    f"📉 Support Zone: {support_str}\n"
-    f"📈 Resistance Zone: {resistance_str}\n"
-    f"Biases:\n"
-    f"Strike: {atm_row['Strike']}\n"
-    f"ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']},\n"
-    f"AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
-    )
+                if not signal_sent:
+            send_telegram_message(
+                f"📍 Spot: {underlying}\n"
+                f"{market_view} — No Signal 🚫 (Spot not in valid zone or direction mismatch)\n"
+                f"Bias Score: {total_score} ({market_view})\n"
+                f"Level: {atm_row['Level']}\n"
+                f"📉 Support Zone: {support_str}\n"
+                f"📈 Resistance Zone: {resistance_str}\n"
+                f"Biases:\n"
+                f"Strike: {atm_row['Strike']}\n"
+                f"ChgOI: {atm_row['ChgOI_Bias']}, Volume: {atm_row['Volume_Bias']}, Gamma: {atm_row['Gamma_Bias']},\n"
+                f"AskQty: {atm_row['AskQty_Bias']}, BidQty: {atm_row['BidQty_Bias']}, IV: {atm_row['IV_Bias']}, DVP: {atm_row['DVP_Bias']}"
+            )
+
 
         st.markdown(f"### 📍 Spot Price: {underlying}")
         st.success(f"🧠 Market View: **{market_view}**")
