@@ -217,7 +217,8 @@ def analyze():
         atm_signal, suggested_trade = "No Signal", ""
         signal_sent = False
 
-                for row in bias_results:
+        for row in bias_results:
+  
             if not is_in_zone(underlying, row['Strike'], row['Level']):
                 continue
 
