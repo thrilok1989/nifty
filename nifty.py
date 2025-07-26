@@ -363,6 +363,8 @@ break
     st.dataframe(pd.DataFrame(st.session_state.trade_log))
 
 
+
+
     except Exception as e:
         st.error(f"❌ Error: {e}")
         send_telegram_message(f"❌ Error: {str(e)}")
