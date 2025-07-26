@@ -365,7 +365,7 @@ break
 
 
 
-    except Exception as e:
+        except Exception as e:
         st.error(f"❌ Error: {e}")
         send_telegram_message(f"❌ Error: {str(e)}")
 
